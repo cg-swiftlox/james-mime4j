@@ -1,18 +1,43 @@
 package playground
 
+import io.reactivex.Flowable
 import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.Single
 import io.reactivex.processors.BehaviorProcessor
 import io.reactivex.processors.UnicastProcessor
 import io.reactivex.rxkotlin.*
+import java.util.*
 import java.util.concurrent.TimeUnit
 
+private val list: LinkedList<String> = LinkedList()
+private val processor: BehaviorProcessor<String> = BehaviorProcessor.create()
 
 fun main(){
     val myObservable = Observable.interval(1000, TimeUnit.MILLISECONDS)
-    myObservable.take(20).subscribe { println("First: $it") }
-    myObservable.take(20).subscribe { println("Second: $it") }
+    val obsDispose = myObservable.take(20).subscribe { println("Observable: $it") }
+//    myObservable.take(20).subscribe { println("Second: $it") }
+
+    myObservable.subscribe{
+        list.add(it.toString())
+        processor.onNext(it.toString())
+    }
+
+    Thread.sleep(3000)
+    obsDispose.dispose()
+    processor.subscribe{
+        println("processor: $it")
+    }
+
+    val abc: Observable<String> =
+        Observable.fromIterable(list).concatWith(processor.toObservable())
+
+    abc.subscribe{
+        println("abc + $it")
+    }
+    abc.subscribe{
+        println("abc2 + $it")
+    }
 
     Thread.sleep(10000)
 }

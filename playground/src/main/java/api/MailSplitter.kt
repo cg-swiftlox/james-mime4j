@@ -12,27 +12,19 @@ import java.util.*
  * Separates a mail stream of lines into two streams:
  *  - HeaderStream: Stream of lines containing only header information
  *  - BodyStream: Stream of lines containing only body information
- *  - FullStream: Stream of complete mail
+ *
+ *  Data structure class for mails.
  */
 class MailSplitter(val stream: Observable<String>) {
 
     private var currentState: MailState = MailState.HEADER_START
+    private var headerTo = 0
+    private var bodyTo = 0
 
     private val headerProcessor = BehaviorProcessor.create<String>()
-    private val bodyProcessor = UnicastProcessor.create<String>()
-    private val fullProcessor = UnicastProcessor.create<String>()
-
-    private var headerNrLines: Single<Long> = SingleSubject.create<Long>()
-    private var bodyNrLines: Single<Long> = SingleSubject.create<Long>()
-    private var fullNrLines: Single<Long> = SingleSubject.create<Long>()
+    private val bodyProcessor = BehaviorProcessor.create<String>()
 
     private val buffer: LinkedList<String> = LinkedList()
-
-    fun subscribeWithObservers(headerObserver: (line: String) -> Unit, bodyObservable: (line: String) -> Unit) {
-        headerProcessor.subscribe(headerObserver)
-        bodyProcessor.subscribe(bodyProcessor)
-        subscribe()
-    }
 
     fun subscribe(): Disposable {
         return stream.subscribe({ line ->
@@ -41,17 +33,16 @@ class MailSplitter(val stream: Observable<String>) {
             when (currentState) {
                 MailState.HEADER_START -> {
                     headerProcessor.onNext(line)
-                    fullProcessor.onNext(line)
                     if(line == System.lineSeparator() || line.isBlank()) {
                         currentState = MailState.BODY_START
                         println("headerProcessor.onComplete()")
                         headerProcessor.onComplete()
-                        headerNrLines = headerProcessor.count()
+                        headerTo = buffer.size-1
+                        println("HeaderTo Index: $headerTo")
                     }
                 }
                 MailState.BODY_START ->  {
                     bodyProcessor.onNext(line)
-                    fullProcessor.onNext(line)
                 }
             }
         }, {
@@ -61,9 +52,8 @@ class MailSplitter(val stream: Observable<String>) {
             currentState = MailState.BODY_END
 
             bodyProcessor.onComplete()
-            bodyNrLines = bodyProcessor.count()
-            fullProcessor.onComplete()
-            fullNrLines = fullProcessor.count()
+            bodyTo = buffer.size-1
+            println("BodyTo Index: $bodyTo")
         })
     }
 
@@ -71,28 +61,40 @@ class MailSplitter(val stream: Observable<String>) {
         return buffer
     }
 
+    /**
+     * Returns the stream of the header.
+     * Header might not have been fully loaded.
+     * Lines will be added to the stream when they arrive.
+     */
     fun getHeaderStream(): Observable<String> {
-        return headerProcessor.toObservable()
+        return Observable.defer {
+            val subList = if(headerTo == 0) buffer else buffer.subList(0, headerTo)
+            println("----------------------HeaderStream---------------------------")
+            println("headerTo: $headerTo | bufferSize: ${buffer.size}")
+            println(subList)
+            println("-------------------------------------------------")
+            Observable.fromIterable(subList).concatWith(headerProcessor.toObservable())
+        }
+//        return headerProcessor.toObservable()
     }
 
+    /**
+     * Returns the stream of the body.
+     * Body might not have been fully loaded.
+     * Lines will be added to the stream when they arrive.
+     *
+     * HeaderStream is already loaded.
+     */
     fun getBodyStream(): Observable<String> {
-        return bodyProcessor.toObservable()
-    }
-
-    fun getFullStream(): Observable<String> {
-        return fullProcessor.toObservable()
-    }
-
-    fun getNrLinesHeader(): Single<Long> {
-        return headerNrLines
-    }
-
-    fun getNrLinesBody(): Single<Long> {
-        return bodyNrLines
-    }
-
-    fun getNrLinesFull(): Single<Long> {
-        return fullNrLines
+        return Observable.defer {
+            val subList = if (headerTo == 0) emptyList<String>() else buffer.subList(headerTo, buffer.size-1)
+            println("-----------------------BodyStream--------------------------")
+            println("headerTo: $headerTo | bufferSize: ${buffer.size}")
+            println(subList)
+            println("-------------------------------------------------")
+            Observable.fromIterable(subList).concatWith(bodyProcessor.toObservable())
+        }
+//        return bodyProcessor.toObservable()
     }
 }
 

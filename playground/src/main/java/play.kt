@@ -7,6 +7,7 @@ import io.reactivex.Emitter
 import io.reactivex.Observable
 import io.vertx.reactivex.core.buffer.Buffer
 import org.apache.james.mime4j.codec.DecodeMonitor
+import org.apache.james.mime4j.dom.Header
 import org.apache.james.mime4j.message.DefaultBodyDescriptorBuilder
 import org.apache.james.mime4j.parser.MimeStreamParser
 import org.apache.james.mime4j.stream.MimeConfig
@@ -18,11 +19,22 @@ import java.nio.charset.Charset
 fun main(){
     val fileObservable = readFromFile()
     val mailStream = MailStream(fileObservable)
+    mailStream.getParsedHeader().subscribe({ header ->
+        println("aaaaaaaaaaaaaaaaaaaaa parsedHeader subscribe")
+        println("aaaaaaaaaaaaaaaaaaaaa content-type: " + header.getField("content-type"))
+    }, {
+        throw it
+    })
 
-    mailStream.getParsedHeader().subscribe { header ->
+    mailStream.parse()
+
+    println("mailstream instance created")
+    mailStream.getParsedHeader().subscribe({ header ->
         println("parsedHeader subscribe")
         println("content-type: " + header.getField("content-type"))
-    }
+    }, {
+        throw it
+    })
 
 }
 

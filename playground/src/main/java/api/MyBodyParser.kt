@@ -8,6 +8,7 @@ import org.apache.james.mime4j.dom.Header
 import org.apache.james.mime4j.dom.field.ContentTypeField
 import playground.dom.BodyImpl
 import playground.mime.body.*
+import playground.mime.body.dom.MyBodyPart
 import kotlin.text.StringBuilder
 
 class MyBodyParser(val mailContentHandler: MailContentHandler, val nrLinesHeader: Int) {
@@ -89,7 +90,7 @@ class MyBodyParser(val mailContentHandler: MailContentHandler, val nrLinesHeader
     }
 
     private fun startBodyPart(line: String){
-        currentBodyPart = MyBodyPart(currentMultiPart!!)
+//        currentBodyPart = MyBodyPart(currentMultiPart!!)
         currentMultiPart!!.addBodyPart(currentBodyPart!!)
         println("${currentMultiPart!!.level}.${currentMultiPart!!.countBodyParts()}")
 
@@ -120,7 +121,7 @@ class MyBodyParser(val mailContentHandler: MailContentHandler, val nrLinesHeader
     }
 
     private fun endHeader(subHeader: Header) {
-        currentBodyPart!!.subHeader = subHeader
+//        currentBodyPart!!.subHeader = subHeader
 
         val contentType = subHeader.getField(FieldTypes.CONTENT_TYPE)
         when (contentType) {
@@ -154,7 +155,7 @@ class MyBodyParser(val mailContentHandler: MailContentHandler, val nrLinesHeader
         } else if (partID == "${currentMultiPart!!.boundaryID}--") {
             // -> epilogue -> endMultipart
             currentState = MultipartState.END_MULTIPART
-            currentMultiPart = currentBodyPart!!.parent
+//            currentMultiPart = currentBodyPart!!.parent
         }
     }
 

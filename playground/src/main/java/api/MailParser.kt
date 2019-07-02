@@ -30,12 +30,12 @@ class MailParser {
         // declare body
 //        val bodyParser: Single<MyBody> = declareBodyParser(mailStream.getFullStream())
         // don't parse header! only store declaration and parse when requested
-        val bodyParser: Single<Body> = declareMyBodyParser(mailSplitter)
-//        parsedBody = bodyParser
-        headerParser.subscribe { header ->
-            parsedHeader.onSuccess(header)
-            bodyParser.subscribe(parsedBody)
-        }
+//        val bodyParser: Single<Body> = declareMyBodyParser(mailSplitter)
+////        parsedBody = bodyParser
+//        headerParser.subscribe { header ->
+//            parsedHeader.onSuccess(header)
+//            bodyParser.subscribe(parsedBody)
+//        }
 
         // start reading from stream
         mailSplitter.subscribe()
@@ -59,9 +59,9 @@ class MailParser {
         }
     }
 
-    private fun declareMyBodyParser(mailSplitter: MailSplitter): Single<Body> {
-        return MyBodyParser.parse(mailSplitter.getBodyStream(), mailContentHandler, 0) //mailSplitter.getNrLinesHeader())
-    }
+//    private fun declareMyBodyParser(mailSplitter: MailSplitter): Single<Body> {
+//        return MyBodyParser.parse(mailSplitter.getBodyStream(), mailContentHandler, 0) //mailSplitter.getNrLinesHeader())
+//    }
 
     fun getHeader(): Single<Header> {
         return parsedHeader

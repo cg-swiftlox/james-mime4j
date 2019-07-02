@@ -8,13 +8,12 @@ import io.reactivex.SingleOnSubscribe
 import org.apache.james.mime4j.dom.Entity
 import org.apache.james.mime4j.dom.Multipart
 import org.apache.james.mime4j.dom.field.ContentTypeField
-import org.apache.james.mime4j.message.BodyPart
 import org.apache.james.mime4j.message.MessageImpl
-import org.apache.james.mime4j.message.MultipartImpl
 import org.apache.james.mime4j.message.SingleBodyBuilder
 import playground.Body
 import playground.mime.body.FieldTypes
 import playground.mime.body.MyHeaderParser
+import playground.mime.body.dom.MyBodyPart
 import playground.mime.body.dom.MyMultipartImpl
 import java.nio.charset.Charset
 
@@ -23,14 +22,14 @@ import java.nio.charset.Charset
  * Parsed objects only contain line information (from, to) of the buffer.
  * @param mailContentHandler: Needed to retrieve the main header of the mail. (must be parsed already)
  */
-class MyBodyParser4j(val mailContentHandler: MailContentHandler) {
+class MyBodyParser4jEfficient(val mailContentHandler: MailContentHandler, nrLinesHeader: Int) {
 
     private var curState = MultipartState.START_MESSAGE
 
     private val message = MessageImpl()
     private lateinit var curEntity: Entity
 
-    private var runningIndex = 0
+    private var runningIndex = nrLinesHeader + 1
 
     private fun parse(stream: Observable<String>): Body {
 
@@ -119,11 +118,15 @@ class MyBodyParser4j(val mailContentHandler: MailContentHandler) {
 
         val contentType = curEntity.header.getField(FieldTypes.CONTENT_TYPE)
         if (contentType is ContentTypeField) {
-            curEntity.body = MultipartImpl(contentType.subType)
+            curEntity.body = MyMultipartImpl(contentType.subType)
         } else {
             throw Exception("No content-type header found")
         }
         curState = MultipartState.PREAMBLE
+        if(curEntity.body is MyMultipartImpl) {
+            val multipart = curEntity.body as MyMultipartImpl
+            multipart.preambleFrom = runningIndex
+        }
         handleState(line)
     }
 
@@ -133,9 +136,9 @@ class MyBodyParser4j(val mailContentHandler: MailContentHandler) {
         // then State = START_BODYPART
 
         if (line.startsWith("--")) {
-            if(curEntity.body is Multipart) {
-                val multipart = curEntity.body as Multipart
-                multipart.preamble = preambleStringBuilder.toString()
+            if(curEntity.body is MyMultipartImpl) {
+                val multipart = curEntity.body as MyMultipartImpl
+                multipart.preambleTo = runningIndex - 1
             }
             preambleStringBuilder.clear()
 
@@ -152,8 +155,9 @@ class MyBodyParser4j(val mailContentHandler: MailContentHandler) {
         // set curEntity = bodypart entity
         // -> START_HEADER
 
-        val bodyPart: BodyPart = BodyPart()
+        val bodyPart = MyBodyPart()
         bodyPart.parent = curEntity
+        bodyPart.from = runningIndex
 
         val multipart = curEntity.body as Multipart // in state START_BODY, curEntity.body must be multipart
         multipart.addBodyPart(bodyPart)
@@ -237,9 +241,21 @@ class MyBodyParser4j(val mailContentHandler: MailContentHandler) {
                 curEntity.body = SingleBodyBuilder.create().setText(bodyStringBuilder.toString()).build()
             bodyStringBuilder.clear()
         }
+        // store the line information "from" in the current bodyPart, before we close it
+        if(curEntity is MyBodyPart) {
+            val myBodyPart = curEntity as MyBodyPart
+            myBodyPart.to = runningIndex-1
+        }
+        // BodyPart ends here -> therefore this level is done and we need to set the parent as the current level
         curEntity = curEntity.parent
+        // if the line ends with "--", then the next state is an EPILOGUE
+        // otherwise the next state is a START_BODYPART
         if(line.trimEnd('\r', '\n').endsWith("--")) { // TODO: maybe do a better check -> check if boundaryID is ident
             curState = MultipartState.EPILOGUE
+            if(curEntity.body is MyMultipartImpl) {
+                val multipart = curEntity.body as MyMultipartImpl
+                multipart.epilogueFrom = runningIndex + 1
+            }
         } else {
             curState = MultipartState.START_BODYPART
             handleState(line)
@@ -256,9 +272,9 @@ class MyBodyParser4j(val mailContentHandler: MailContentHandler) {
             curState = MultipartState.END_MULTIPART
             handleState(line)
         } else {
-            if(curEntity.body is Multipart) {
-                val multipart = curEntity.body as Multipart
-                multipart.epilogue = multipart.epilogue + line
+            if(curEntity.body is MyMultipartImpl) {
+                val multipart = curEntity.body as MyMultipartImpl
+                multipart.epilogueTo = runningIndex
             }
         }
     }
@@ -280,7 +296,7 @@ class MyBodyParser4j(val mailContentHandler: MailContentHandler) {
 
             return Single.create(SingleOnSubscribe<Body> { emitter ->
                 println("single create")
-                val myBodyParser = MyBodyParser4j(mailContentHandler)
+                val myBodyParser = MyBodyParser4jEfficient(mailContentHandler, nrLinesHeader)
                 emitter.onSuccess(myBodyParser.parse(stream))
             })
         }

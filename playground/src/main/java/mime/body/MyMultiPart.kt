@@ -1,5 +1,7 @@
 package playground.mime.body
 
+import playground.mime.body.dom.MyBodyPart
+
 class MyMultiPart(val parent: MyBodyPart? = null){
 
     var level = 0
