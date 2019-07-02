@@ -2,12 +2,11 @@ package playground
 
 import api.BufferInputStream
 import api.MailContentHandler
-import api.MailStream
+import mime.body.MailStream
 import io.reactivex.Emitter
 import io.reactivex.Observable
 import io.vertx.reactivex.core.buffer.Buffer
 import org.apache.james.mime4j.codec.DecodeMonitor
-import org.apache.james.mime4j.dom.Header
 import org.apache.james.mime4j.message.DefaultBodyDescriptorBuilder
 import org.apache.james.mime4j.parser.MimeStreamParser
 import org.apache.james.mime4j.stream.MimeConfig

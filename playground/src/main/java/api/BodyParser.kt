@@ -5,12 +5,11 @@ import org.apache.james.mime4j.codec.DecodeMonitor
 import org.apache.james.mime4j.message.DefaultBodyDescriptorBuilder
 import org.apache.james.mime4j.parser.MimeStreamParser
 import org.apache.james.mime4j.stream.MimeConfig
-import playground.Body
 
 class BodyParser {
 
     companion object {
-        fun parseBody(buffer: Buffer, mailContentHandler: MailContentHandler): Body {
+        fun parseBody(buffer: Buffer, mailContentHandler: MailContentHandler): Unit {
             println("BodyParser: onComplete()")
 
             val mime4jParserConfig = MimeConfig.Builder()
@@ -25,10 +24,9 @@ class BodyParser {
 
             mime4jParser.parse(BufferInputStream(buffer))
 
-            return mailContentHandler.body
         }
 
-        fun parseBody(buffer: Buffer): Body {
+        fun parseBody(buffer: Buffer): Unit {
             return parseBody(buffer, MailContentHandler())
         }
     }

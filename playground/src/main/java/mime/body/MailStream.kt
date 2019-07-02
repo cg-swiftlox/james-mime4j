@@ -1,22 +1,17 @@
-package api
+package mime.body
 
-import io.reactivex.Maybe
+import api.HeaderParser
+import api.IMailStream
+import api.MailContentHandler
+import api.MailSplitter
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.processors.BehaviorProcessor
-import io.reactivex.processors.UnicastProcessor
-import io.reactivex.subjects.SingleSubject
-import io.reactivex.subjects.UnicastSubject
 import io.vertx.reactivex.core.buffer.Buffer
 import org.apache.james.mime4j.dom.Entity
 import org.apache.james.mime4j.dom.Header
-import playground.Attachment
-import playground.dom.IContent
-import playground.dom.MyBodyParser4j
 import playground.dom.MyBodyParser4jEfficient
-import java.lang.Exception
 import java.util.*
-import kotlin.collections.ArrayList
 
 /**
  *

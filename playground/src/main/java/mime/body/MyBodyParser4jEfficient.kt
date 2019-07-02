@@ -6,11 +6,11 @@ import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.SingleOnSubscribe
 import org.apache.james.mime4j.dom.Entity
+import org.apache.james.mime4j.dom.Message
 import org.apache.james.mime4j.dom.Multipart
 import org.apache.james.mime4j.dom.field.ContentTypeField
 import org.apache.james.mime4j.message.MessageImpl
 import org.apache.james.mime4j.message.SingleBodyBuilder
-import playground.Body
 import playground.mime.body.FieldTypes
 import playground.mime.body.MyHeaderParser
 import playground.mime.body.dom.MyBodyPart
@@ -31,7 +31,7 @@ class MyBodyParser4jEfficient(val mailContentHandler: MailContentHandler, nrLine
 
     private var runningIndex = nrLinesHeader + 1
 
-    private fun parse(stream: Observable<String>): Body {
+    private fun parse(stream: Observable<String>): Message {
 
         curEntity = message
         message.header = mailContentHandler.header
@@ -49,7 +49,7 @@ class MyBodyParser4jEfficient(val mailContentHandler: MailContentHandler, nrLine
             }
         }
 
-        return BodyImpl()
+        return message
     }
 
     private val singleBodyStringBuilder = StringBuilder()
@@ -291,10 +291,10 @@ class MyBodyParser4jEfficient(val mailContentHandler: MailContentHandler, nrLine
     }
 
     companion object {
-        fun parse(stream: Observable<String>, mailContentHandler: MailContentHandler, nrLinesHeader: Int): Single<Body> {
+        fun parse(stream: Observable<String>, mailContentHandler: MailContentHandler, nrLinesHeader: Int): Single<Message> {
             println("companion object parse")
 
-            return Single.create(SingleOnSubscribe<Body> { emitter ->
+            return Single.create(SingleOnSubscribe<Message> { emitter ->
                 println("single create")
                 val myBodyParser = MyBodyParser4jEfficient(mailContentHandler, nrLinesHeader)
                 emitter.onSuccess(myBodyParser.parse(stream))

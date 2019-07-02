@@ -5,14 +5,11 @@ import org.apache.james.mime4j.message.HeaderImpl
 import org.apache.james.mime4j.parser.ContentHandler
 import org.apache.james.mime4j.stream.BodyDescriptor
 import org.apache.james.mime4j.stream.Field
-import playground.Body
-import playground.dom.BodyImpl
 import java.io.InputStream
 
 class MailContentHandler: ContentHandler {
 
     val header: Header = HeaderImpl()
-    val body: Body = BodyImpl()
 
     var level = 0
 
@@ -72,7 +69,7 @@ class MailContentHandler: ContentHandler {
     override fun body(bd: BodyDescriptor?, inStream: InputStream?) {
         println(getSpacing() + "body(${bd} - ")//${`is`})")
         print(getSpacing() + "   ")
-        body.setAttachment(bd, inStream)
+//        body.setAttachment(bd, inStream)
     }
 
     override fun raw(`is`: InputStream?) {

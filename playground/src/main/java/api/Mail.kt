@@ -22,9 +22,9 @@ class Mail(val stream: Observable<String>) {
     }
 
     fun parseBody() {
-        parser.getBody().subscribe { body ->
-            println("body")
-            println(body)
-        }
+//        parser.getBody().subscribe { body ->
+//            println("body")
+//            println(body)
+//        }
     }
 }

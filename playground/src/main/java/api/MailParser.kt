@@ -5,11 +5,9 @@ import io.reactivex.Single
 import io.reactivex.subjects.SingleSubject
 import io.vertx.reactivex.core.buffer.Buffer
 import org.apache.james.mime4j.dom.Header
-import playground.Body
 
 class MailParser {
     val parsedHeader = SingleSubject.create<Header>()
-    var parsedBody = SingleSubject.create<Body>()
     private val mailContentHandler = MailContentHandler()
 
     fun parse(stream: Observable<String>){
@@ -50,7 +48,7 @@ class MailParser {
         }
     }
 
-    private fun declareBodyParser(bodyStream: Observable<String>): Single<Body> {
+    private fun declareBodyParser(bodyStream: Observable<String>): Single<Unit> {
         return bodyStream.reduceWith({Buffer.buffer()}, {buffer, nextElement ->
             println("MailParser: collect body line")
             buffer.appendString(nextElement)
@@ -65,10 +63,6 @@ class MailParser {
 
     fun getHeader(): Single<Header> {
         return parsedHeader
-    }
-
-    fun getBody(): Single<Body> {
-        return parsedBody
     }
 
 //    companion object {

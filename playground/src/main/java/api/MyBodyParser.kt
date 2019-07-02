@@ -3,10 +3,8 @@ package api
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.SingleOnSubscribe
-import playground.Body
 import org.apache.james.mime4j.dom.Header
 import org.apache.james.mime4j.dom.field.ContentTypeField
-import playground.dom.BodyImpl
 import playground.mime.body.*
 import playground.mime.body.dom.MyBodyPart
 import kotlin.text.StringBuilder
@@ -20,7 +18,7 @@ class MyBodyParser(val mailContentHandler: MailContentHandler, val nrLinesHeader
     private var currentMultiPart: MyMultiPart? = null
     private var currentBodyPart: MyBodyPart? = null
 
-    private fun parse(stream: Observable<String>): Body {
+    private fun parse(stream: Observable<String>): String {
 
         val header = mailContentHandler.header
         val contentType = header.getField(FieldTypes.CONTENT_TYPE)
@@ -35,7 +33,7 @@ class MyBodyParser(val mailContentHandler: MailContentHandler, val nrLinesHeader
             }
         }
 
-        return BodyImpl()
+        return ""
     }
 
     private fun parsePlainText(stream: Observable<String>) {
@@ -164,10 +162,10 @@ class MyBodyParser(val mailContentHandler: MailContentHandler, val nrLinesHeader
     }
 
     companion object {
-        fun parse(stream: Observable<String>, mailContentHandler: MailContentHandler, nrLinesHeader: Int): Single<Body> {
+        fun parse(stream: Observable<String>, mailContentHandler: MailContentHandler, nrLinesHeader: Int): Single<String> {
             println("companion object parse")
 
-            return Single.create(SingleOnSubscribe<Body> { emitter ->
+            return Single.create(SingleOnSubscribe<String> { emitter ->
                 println("single create")
                 val myBodyParser = MyBodyParser(mailContentHandler, nrLinesHeader)
                 emitter.onSuccess(myBodyParser.parse(stream))
